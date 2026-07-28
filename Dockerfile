@@ -9,6 +9,11 @@ ENV PYTHONUNBUFFERED=1 \
 
 WORKDIR /app
 
+# System libs some AI/vector wheels need at runtime (e.g. onnxruntime -> libgomp1).
+RUN apt-get update \
+    && apt-get install -y --no-install-recommends libgomp1 \
+    && rm -rf /var/lib/apt/lists/*
+
 # Install dependencies first (better build caching).
 COPY requirements.txt .
 RUN pip install --no-cache-dir -r requirements.txt
