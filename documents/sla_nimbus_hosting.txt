@@ -1,0 +1,41 @@
+MANAGED HOSTING SERVICE LEVEL AGREEMENT
+
+Parties:
+Client: Global Retail AG
+Vendor: Nimbus Hosting Ltd
+
+Effective Date: 20 January 2026
+Term: 1 year, auto-renewing for successive 1-year terms unless either party gives
+60 days' notice.
+
+Contract Value: EUR 4,200 per month (EUR 50,400 per year).
+
+Service Levels:
+99.9% monthly uptime guarantee. Support response within 1 hour for critical
+incidents. Planned maintenance notified 7 days in advance and performed in a
+low-traffic window.
+
+Service Credits:
+If uptime falls below target, the Client receives service credits on a published,
+capped schedule (maximum 30% of the monthly fee). Credits are the Client's sole
+remedy for missed service levels — no punitive penalties.
+
+Payment Terms:
+Monthly in arrears, Net 30.
+
+Data Protection (GDPR):
+Vendor acts as processor under a signed DPA. All data stored in EU data centers.
+
+Liability:
+Aggregate liability capped at the fees paid in the preceding 12 months. Neither
+party liable for indirect or consequential loss.
+
+Security:
+Vendor maintains ISO 27001 certification, encrypted backups, and 24/7 monitoring.
+
+Termination:
+Either party may terminate for uncured material breach after a 30-day cure period.
+
+Governing Law: England and Wales.
+
+A well-balanced, low-risk managed hosting agreement with capped remedies.

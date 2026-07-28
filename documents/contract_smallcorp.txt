@@ -1,0 +1,18 @@
+MASTER SERVICE AGREEMENT
+
+Client: SmallCorp Industries
+Vendor: Smart AI
+
+Contract Value: 1,000,000 EUR
+
+Payment Terms:
+Net 60 days.
+
+Termination:
+Client may terminate immediately.
+
+Security:
+Vendor responsible for all data losses.
+
+Penalties:
+25% penalties for SLA failures.

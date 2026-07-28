@@ -1,0 +1,18 @@
+Enterprise Service Agreement
+
+Client: Global Retail AG
+Vendor: SmartVision AI
+
+Contract Value: 1,200,000 EUR
+
+Payment Terms:
+Net 120 days.
+
+Termination:
+Client may terminate immediately without compensation.
+
+Security:
+Vendor liable for all data breaches.
+
+Penalties:
+10% penalties for SLA violations.

@@ -1,0 +1,42 @@
+MASTER SERVICES AGREEMENT
+
+Parties:
+Client: Global Retail AG
+Vendor: CloudSphere Solutions Inc.
+
+Effective Date: 15 February 2026
+Term: 3 years, auto-renewing for 1-year periods unless 90 days' notice is given.
+
+Contract Value: EUR 960,000 over the initial term (EUR 320,000 per year).
+
+Scope:
+Design, development and operation of the Client's e-commerce platform, including
+hosting, releases and third-line support.
+
+Payment Terms:
+Net 60 days from invoice. Late payments accrue interest at 8% per annum.
+
+Termination:
+Client may terminate for convenience on 90 days' notice with payment for work
+performed. Either party may terminate for uncured material breach after 30 days.
+
+Liability:
+Vendor's aggregate liability is capped at 12 months of fees. However, data-breach
+liability is uncapped, which is a point of concern for the Client.
+
+Data Protection (GDPR):
+A DPA is referenced but not yet attached. The parties commit to execute it within
+30 days of signature. This gap should be closed promptly.
+
+Service Levels:
+99.5% uptime with service credits. Auto-renewal and the 90-day exit notice reduce
+the Client's flexibility.
+
+Intellectual Property:
+Custom deliverables are assigned to the Client; the Vendor retains its pre-existing
+tools and libraries under a perpetual license to the Client.
+
+Governing Law: Ireland.
+
+A generally reasonable agreement carrying medium risk: uncapped data-breach
+liability, a pending DPA, Net 60 terms, and auto-renewal lock-in.

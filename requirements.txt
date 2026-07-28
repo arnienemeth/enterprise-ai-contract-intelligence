@@ -1,0 +1,26 @@
+# Enterprise AI Contract Intelligence Platform
+# Runtime dependencies (verified working — app boots and endpoints respond)
+#
+# Install:  pip install -r requirements.txt
+# Python:   3.10+ recommended
+
+# --- Web / API layer ---
+fastapi==0.139.2
+uvicorn[standard]==0.51.0
+python-multipart==0.0.32        # required by /upload-contract (file uploads)
+
+# --- Azure OpenAI (chat + embeddings) ---
+openai==2.46.0                  # AzureOpenAI client
+
+# --- Vector store / semantic search ---
+chromadb==1.5.9                 # local persistent vector DB (./vector_db)
+
+# --- Config ---
+python-dotenv==1.2.2            # loads .env
+
+# --- MCP server (mcp_server/server.py — reserved for future integration) ---
+mcp==1.28.1
+
+# Note: on some sandboxed/proxied environments httpx needs the socks extra:
+#   pip install "httpx[socks]"
+# Not required on a normal Windows/Mac/Linux workstation.

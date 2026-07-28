@@ -1,0 +1,39 @@
+SAAS SUBSCRIPTION AGREEMENT
+
+Parties:
+Client: Global Retail AG
+Vendor: DataPeak Analytics Corp.
+
+Effective Date: 8 February 2026
+Term: 3 years, auto-renewing for 3-year periods unless 120 days' notice is given.
+
+Contract Value: EUR 780,000 over the initial term.
+
+Payment Terms:
+Net 120 days — but the full first year is invoiced and payable in advance. Late
+payment interest of 12% per annum applies, and the Vendor may suspend the service
+for any overdue amount.
+
+Termination:
+The Vendor may terminate or suspend immediately, without notice, for any breach.
+The Client has no right to terminate for convenience and forfeits all prepaid fees.
+
+Liability:
+The Client's indemnity to the Vendor is uncapped. The Vendor's own liability is
+limited to one month of fees. This is a heavily one-sided allocation of risk.
+
+Data Protection (GDPR):
+Customer personal data is processed and stored in the United States. No DPA is
+attached and no Standard Contractual Clauses are referenced — a serious GDPR gap.
+
+Data Ownership:
+The Vendor claims a broad license to use Client data, including for training its
+own models, with no clear opt-out.
+
+Service Levels:
+No uptime commitment and no service credits are offered.
+
+Governing Law: Delaware, USA, with mandatory arbitration and a waiver of class claims.
+
+HIGH risk: Net 120 with a year prepaid, immediate vendor termination, uncapped
+client indemnity, US data transfer with no DPA, broad data reuse, and no SLA.

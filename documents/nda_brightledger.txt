@@ -1,0 +1,37 @@
+MUTUAL NON-DISCLOSURE AGREEMENT
+
+Parties:
+Client: Global Retail AG
+Vendor: BrightLedger Technologies s.r.o.
+
+Effective Date: 12 January 2026
+Term: 2 years from the Effective Date.
+
+Purpose:
+To evaluate a potential software integration partnership and exchange
+confidential technical and commercial information for that purpose only.
+
+Contract Value: N/A (no fees exchanged under this agreement).
+
+Confidentiality:
+Each party shall protect the other's Confidential Information using at least
+the same degree of care it uses for its own, and no less than reasonable care.
+Obligations survive for 3 years after termination.
+
+Data Protection (GDPR):
+No personal data is exchanged under this agreement. Should any personal data be
+shared, both parties agree to comply with Regulation (EU) 2016/679 (GDPR) and to
+sign a separate Data Processing Agreement before any processing begins.
+
+Liability:
+Each party's aggregate liability is limited to EUR 50,000. Neither party is
+liable for indirect or consequential damages.
+
+Termination:
+Either party may terminate on 30 days' written notice. Confidentiality
+obligations survive termination.
+
+Governing Law:
+Laws of the Slovak Republic. Disputes resolved by the courts of Bratislava.
+
+This is a balanced, low-risk mutual NDA with standard, reciprocal terms.

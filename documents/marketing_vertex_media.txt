@@ -1,0 +1,43 @@
+MARKETING SERVICES AGREEMENT
+
+Parties:
+Client: Global Retail AG
+Vendor: Vertex Media Group
+
+Effective Date: 10 March 2026
+Term: 18 months.
+
+Contract Value: EUR 540,000 (EUR 30,000 per month) plus media spend billed at cost.
+
+Scope:
+Performance marketing, paid social, and content production, including management of
+the Client's advertising accounts and creative assets.
+
+Payment Terms:
+Net 60 days on service fees; media spend prepaid monthly in advance. A 15%
+management fee applies on all media spend.
+
+Termination:
+Client may terminate on 60 days' notice. Creative work in progress is billed in
+full, and prepaid media spend is non-refundable.
+
+Liability:
+Capped at 3 months of fees — a relatively low cap given the account access granted.
+
+Data Protection (GDPR):
+Vendor processes customer audience data for targeting. A DPA is attached, but the
+agreement permits use of aggregated data for the Vendor's own benchmarking, which
+warrants review.
+
+Intellectual Property:
+Final approved creative transfers to the Client; unused concepts remain the
+Vendor's property.
+
+Exclusivity:
+Vendor may work with other retailers, including competitors, subject to
+confidentiality — a mild conflict-of-interest concern.
+
+Governing Law: Slovak Republic.
+
+Medium risk: low liability cap, non-refundable media spend, competitor exclusivity
+gap and secondary data use, balanced by an attached DPA and clean IP transfer.

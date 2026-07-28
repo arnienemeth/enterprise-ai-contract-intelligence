@@ -1,0 +1,43 @@
+MASTER SUPPLY AGREEMENT
+
+Parties:
+Buyer: Global Retail AG
+Supplier (Vendor): Ironclad Manufacturing Co.
+
+Effective Date: 1 February 2026
+Term: 4 years, with a minimum purchase commitment.
+
+Contract Value: EUR 5,400,000 over the term (minimum EUR 1,350,000 per year).
+
+Minimum Commitment:
+The Buyer must purchase the annual minimum or pay a shortfall penalty of 25% of
+the unmet amount — a significant take-or-pay exposure.
+
+Payment Terms:
+Net 180 days from delivery, with no early-payment discount. The Supplier may
+change prices with only 15 days' notice.
+
+Termination:
+The Supplier may terminate immediately if any single invoice is more than 10 days
+overdue. The Buyer may not terminate for convenience during the term.
+
+Liability:
+The Supplier caps its liability at 5% of the affected order value and excludes all
+liability for defective goods once accepted. The Buyer indemnifies the Supplier
+broadly, including for third-party recalls.
+
+Warranty:
+A limited 30-day defect window only; no fitness-for-purpose warranty.
+
+Data Protection (GDPR):
+Not addressed. Order data includes some personal contact details with no handling
+terms.
+
+Force Majeure:
+One-sided — protects the Supplier's delivery failures but not the Buyer's payment
+obligations.
+
+Governing Law: with mandatory arbitration seated outside the EU.
+
+HIGH risk: Net 180, take-or-pay penalty, immediate supplier termination, a 5%
+liability cap, broad buyer indemnity, weak warranty, and no GDPR terms.

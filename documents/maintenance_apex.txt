@@ -1,0 +1,42 @@
+EQUIPMENT MAINTENANCE & SUPPORT AGREEMENT
+
+Parties:
+Client: Global Retail AG
+Vendor: Apex Infrastructure Services
+
+Effective Date: 22 February 2026
+Term: 2 years.
+
+Contract Value: EUR 216,000 (EUR 9,000 per month).
+
+Scope:
+Preventive and corrective maintenance of the Client's warehouse automation and
+conveyor systems, including spare parts and 24/7 call-out.
+
+Payment Terms:
+Net 60 days. Spare parts billed separately at a 20% handling margin.
+
+Service Levels:
+4-hour response for critical breakdowns; 95% first-visit fix rate target. Missed
+targets trigger a modest credit, but repeated failures carry no strong remedy.
+
+Termination:
+Either party may terminate on 90 days' notice. Early termination by the Client
+incurs a fee equal to 2 months of service.
+
+Liability:
+Capped at 12 months of fees. Vendor excludes liability for production downtime,
+which shifts a meaningful operational risk to the Client.
+
+Data Protection (GDPR):
+Minimal personal data (technician access logs). GDPR referenced; no full DPA, as
+processing is incidental.
+
+Indemnity:
+Mutual indemnity for third-party bodily injury or property damage caused by
+negligence.
+
+Governing Law: Slovak Republic.
+
+Medium risk: downtime liability excluded, Net 60, early-termination fee and a weak
+SLA remedy, offset by a standard liability cap and mutual injury indemnity.

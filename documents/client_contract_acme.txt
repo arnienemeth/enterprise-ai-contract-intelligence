@@ -1,0 +1,19 @@
+MASTER SERVICES AGREEMENT
+
+Client: ACME Manufacturing Ltd.
+Vendor: NextVision Consulting
+
+Project Duration: 12 months
+Contract Value: 240,000 EUR
+
+Payment Terms:
+Invoices payable within 90 days.
+
+Data Protection:
+Vendor responsible for securing all client data.
+
+Penalties:
+Late delivery penalties of 5% per milestone.
+
+Termination:
+Client may terminate with 14-day notice.

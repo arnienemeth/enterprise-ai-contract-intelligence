@@ -1,0 +1,42 @@
+SOFTWARE LICENSE AGREEMENT
+
+Parties:
+Licensee: Global Retail AG
+Licensor (Vendor): PixelForge Studios Oy
+
+Effective Date: 18 February 2026
+Term: 3-year term license.
+
+Contract Value: EUR 150,000 annual license fee (EUR 450,000 total).
+
+License Grant:
+Non-exclusive, non-transferable license to use the PixelForge design suite for up
+to 200 named users across the Client's group.
+
+Payment Terms:
+Annual fee invoiced yearly in advance, Net 45. A 6% annual price uplift applies at
+each renewal.
+
+Support & Maintenance:
+Standard support included during business hours. Critical fixes within 5 business
+days — slower than the Client would prefer for a production tool.
+
+Audit Rights:
+Licensor may audit usage on 10 days' notice up to twice per year. Over-deployment
+is charged at 130% of list price, a somewhat punitive true-up rate.
+
+Liability:
+Capped at 12 months of fees. Licensor disclaims liability for data loss; the Client
+is responsible for its own backups.
+
+Data Protection (GDPR):
+The software may process personal data; a DPA is attached and GDPR-aligned.
+
+Termination:
+Either party may terminate for uncured material breach after 30 days. No refund of
+prepaid fees on termination for convenience.
+
+Governing Law: Finland.
+
+Medium risk: punitive over-deployment true-up, slow critical-fix SLA, annual price
+uplift and no prepaid-fee refunds, offset by a proper DPA and a normal liability cap.

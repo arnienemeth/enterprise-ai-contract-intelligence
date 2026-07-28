@@ -1,0 +1,41 @@
+CONSULTING SERVICES AGREEMENT
+
+Parties:
+Client: Global Retail AG
+Vendor: Orion Advisory Group LLC
+
+Effective Date: 3 March 2026
+Term: 12 months.
+
+Contract Value: EUR 240,000 (EUR 20,000 per month retainer).
+
+Scope:
+Strategic advisory on supply-chain digitisation, including workshops, an
+assessment report, and a phased implementation roadmap.
+
+Payment Terms:
+Net 60 days. A non-refundable mobilisation fee of EUR 40,000 is due on signature.
+
+Termination:
+Client may terminate on 60 days' notice. The non-refundable mobilisation fee is
+not returned, and any committed third-party costs remain payable.
+
+Liability:
+Vendor's liability is capped at fees paid in the preceding 6 months. Vendor
+excludes liability for business decisions the Client makes based on the advice.
+
+Data Protection (GDPR):
+Limited personal data (employee interview notes) is processed. A short data-
+handling clause is included but references GDPR only generally, without a full DPA.
+
+Intellectual Property:
+Reports are licensed to the Client for internal use; the Vendor retains ownership
+of its underlying methodologies and frameworks.
+
+Confidentiality:
+Mutual confidentiality for 3 years.
+
+Governing Law: New York, USA (a non-EU forum, adding some friction for an EU client).
+
+Medium risk: non-refundable fee, Net 60, a light GDPR clause, and a non-EU
+governing law, balanced by a reasonable liability cap.
