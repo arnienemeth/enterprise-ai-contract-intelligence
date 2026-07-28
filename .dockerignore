@@ -1,0 +1,34 @@
+# Keep the build context small and secret-free.
+# NOTE: vector_db/ and documents/ are intentionally NOT ignored — they seed the demo.
+
+venv/
+.git/
+.gitignore
+
+# Secrets — never bake into the image
+.env
+.env.*
+
+# Python caches
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+
+# Docs & assets not needed at runtime
+*.md
+*.docx
+*.pdf
+assets/
+~$*
+
+# Local scratch tests
+test.py
+test_openai.py
+test_vectors.py
+
+# Not used by the API runtime
+mcp_server/
+prompts/
+logs/
+outputs/

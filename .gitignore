@@ -12,8 +12,9 @@ __pycache__/
 .Python
 *.egg-info/
 
-# --- Vector store (regenerated locally) ---
-vector_db/
+# --- Vector store ---
+# The seed vector_db is committed so the deployed demo has data on first load.
+# (Regenerate anytime with: python reindex.py --reset)
 vector_store/*.pkl
 vector_store/*.index
 
