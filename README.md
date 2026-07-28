@@ -4,6 +4,8 @@
 **Version:** MVP v1.0
 **Status:** Working end-to-end MVP demonstrating an enterprise-grade AI architecture. The AI core (ingest → analyze → store → search → dashboard) runs locally against Azure OpenAI; the enterprise integration layer (SharePoint / Power Automate) is designed and documented.
 
+![Contract Intelligence Dashboard — risk distribution and vendor analytics](assets/dashboard.png)
+
 An **Enterprise AI Contract Intelligence Platform** built with Azure OpenAI, FastAPI and a
 vector database. It ingests contracts, runs LLM-based risk analysis, generates executive
 summaries, answers natural-language questions over the contract knowledge base using
