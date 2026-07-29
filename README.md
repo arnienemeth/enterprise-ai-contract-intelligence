@@ -4,6 +4,9 @@
 **Version:** MVP v1.0
 **Status:** Working end-to-end MVP demonstrating an enterprise-grade AI architecture. The AI core (ingest → analyze → store → search → dashboard) runs locally against Azure OpenAI; the enterprise integration layer (SharePoint / Power Automate) is designed and documented.
 
+**🔗 Live demo:** [dashboard](https://contract-ai-api.calmfield-8431240b.westeurope.azurecontainerapps.io/dashboard-view) · [API docs (Swagger)](https://contract-ai-api.calmfield-8431240b.westeurope.azurecontainerapps.io/docs)
+*(Deployed on Azure Container Apps. First load may take a few seconds while the container wakes.)*
+
 ![Contract Intelligence Dashboard — risk distribution and vendor analytics](assets/dashboard.png)
 
 An **Enterprise AI Contract Intelligence Platform** built with Azure OpenAI, FastAPI and a
