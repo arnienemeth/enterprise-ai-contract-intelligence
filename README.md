@@ -149,10 +149,15 @@ working directory (`./vector_db`).
 | GET | `/dashboard` | Contract counts by risk level + vendor (JSON) | No |
 | GET | `/dashboard-view` | Visual HTML dashboard (cards, chart, table) | No |
 | GET | `/vendor-analytics` | Vendors ranked by weighted risk score | No |
-| POST | `/upload-contract` | Embed a contract + return structured risk JSON | Yes |
-| POST | `/ask` | RAG: semantic search → LLM answer | Yes |
-| POST | `/semantic-search` | Return most similar contracts | Yes |
-| POST | `/find-risky-contracts` | Filter results for risk/GDPR/liability keywords | Yes |
+| POST | `/upload-contract` | Embed a contract (file upload) + return risk JSON | Yes 🔒 |
+| POST | `/analyze-contract` | Analyze a contract sent as JSON (Power Automate) | Yes 🔒 |
+| POST | `/ask` | RAG: semantic search → LLM answer | Yes 🔒 |
+| POST | `/semantic-search` | Return most similar contracts | Yes 🔒 |
+| POST | `/find-risky-contracts` | Filter results for risk/GDPR/liability keywords | Yes 🔒 |
+
+🔒 = requires the `X-API-Key` header. The token-spending endpoints are protected so the public
+dashboard stays open but only authorized callers can run the AI. See
+[POWER_AUTOMATE_SETUP.md](POWER_AUTOMATE_SETUP.md) for the SharePoint + Power Automate integration.
 
 Full request/response details are in the comprehensive documentation
 (`Enterprise_AI_Contract_Intelligence_Documentation.docx`).

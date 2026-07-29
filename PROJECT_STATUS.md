@@ -39,12 +39,14 @@ implemented**, and the **known issues**. It is deliberately conservative: an ite
 | Endpoint | `GET /dashboard` | ✅ | Fixed: queries ChromaDB for real counts (by level + by vendor) |
 | Endpoint | `GET /dashboard-view` | ✅ | New: HTML dashboard (cards, risk chart, vendor table) |
 | Endpoint | `GET /vendor-analytics` | ✅ | New: vendors ranked by weighted risk (high=3/med=2/low=1) |
+| Endpoint | `POST /analyze-contract` | ✅ | New: JSON-in analysis for Power Automate |
+| Security | API key auth (`X-API-Key`) | ✅ | Protects the AI/token-spending endpoints; dashboard stays public |
 | Repo hygiene | `.gitignore` / `.env.example` | ✅ | Added |
 | MCP | `mcp_server/server.py` | 🟡 | Prototype only; not in production workflow |
-| Integration | SharePoint Repository + Register | 📐 | Designed in docs; no code |
-| Integration | Power Automate flow | 📐 | Designed; no code |
-| Ops | Authentication (Entra ID) | ⬜ | Not started |
-| Ops | Azure deployment (App Service / Functions) | ⬜ | Not started |
+| Deploy | Azure Container Apps (live URL) | ✅ | Deployed; public HTTPS endpoint |
+| Deploy | CI/CD (GitHub Actions) | ✅ | Auto build + deploy on push to `main` |
+| Integration | Power Automate ↔ FastAPI | ✅ | `/analyze-contract` ready; flow guide in POWER_AUTOMATE_SETUP.md |
+| Integration | SharePoint Repository + Register | 🟡 | Design + step-by-step guide provided; user configures in M365 |
 | Ops | OCR (Azure AI Document Intelligence) | ⬜ | Not started |
 | Ops | Azure AI Search (prod vector DB) | ⬜ | Not started |
 

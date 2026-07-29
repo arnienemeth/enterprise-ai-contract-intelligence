@@ -216,22 +216,16 @@ You are an enterprise AI assistant specializing in:
     }
 
 # ==========================================
-# UPLOAD CONTRACT
+# CONTRACT ANALYSIS (shared logic)
 # ==========================================
 
-@app.post("/upload-contract", dependencies=[Depends(require_api_key)])
-async def upload_contract(file: UploadFile = File(...)):
+def analyze_and_store(contract: str, filename: str) -> dict:
+    """Run the AI risk analysis on a contract, store it in the vector DB with the
+    real vendor / risk metadata, and return the structured JSON.
 
-    print(f"Uploading file: {file.filename}")
+    Shared by /upload-contract (multipart file) and /analyze-contract (JSON body,
+    used by Power Automate)."""
 
-    # READ FILE
-    content = await file.read()
-
-    contract = content.decode("utf-8")
-
-    # ANALYSIS PROMPT
-    # NOTE: the contract is stored AFTER analysis (below) so we can save the
-    # real vendor / risk_level returned by the AI instead of hardcoded values.
     prompt = f"""
 Analyze this enterprise contract.
 
@@ -263,36 +257,22 @@ Return ONLY valid JSON in this exact format:
 }}
 """
 
-    # AI CALL
     response = client.chat.completions.create(
         model=os.getenv("AZURE_OPENAI_DEPLOYMENT"),
         messages=[
             {
                 "role": "system",
-                "content": """
-You are a senior enterprise contract risk analyst.
-
-IMPORTANT:
-Return ONLY valid JSON.
-No markdown.
-No explanations.
-"""
+                "content": "You are a senior enterprise contract risk analyst. Return ONLY valid JSON. No markdown. No explanations.",
             },
-            {
-                "role": "user",
-                "content": prompt
-            }
+            {"role": "user", "content": prompt},
         ],
-        temperature=0.2
+        temperature=0.2,
     )
 
     ai_response = response.choices[0].message.content
 
-    print("Contract upload analysis completed.")
-
     # Parse the AI JSON (tolerate accidental ```json code fences)
     cleaned = ai_response.strip()
-
     if cleaned.startswith("```"):
         cleaned = cleaned.lstrip("`")
         if cleaned[:4].lower() == "json":
@@ -300,39 +280,58 @@ No explanations.
         cleaned = cleaned.strip().rstrip("`").strip()
 
     try:
-
         parsed_json = json.loads(cleaned)
-
     except Exception as e:
-
         # Still store the contract so it stays searchable, with Unknown metadata
-        add_document(
-            text=contract,
-            filename=file.filename,
-            vendor="Unknown",
-            risk_level="Unknown"
-        )
-
+        add_document(text=contract, filename=filename, vendor="Unknown", risk_level="Unknown")
         return {
             "error": "Invalid JSON returned by AI",
             "raw_response": ai_response,
-            "exception": str(e)
+            "exception": str(e),
+            "filename": filename,
         }
 
-    # Store the contract with the REAL vendor / risk metadata from the AI
     vendor = str(parsed_json.get("vendor", "Unknown")).strip() or "Unknown"
     risk_level = str(parsed_json.get("risk_level", "Unknown")).strip() or "Unknown"
 
-    add_document(
-        text=contract,
-        filename=file.filename,
-        vendor=vendor,
-        risk_level=risk_level
-    )
+    add_document(text=contract, filename=filename, vendor=vendor, risk_level=risk_level)
 
-    parsed_json["filename"] = file.filename
-
+    parsed_json["filename"] = filename
     return parsed_json
+
+# ==========================================
+# UPLOAD CONTRACT (multipart file upload)
+# ==========================================
+
+@app.post("/upload-contract", dependencies=[Depends(require_api_key)])
+async def upload_contract(file: UploadFile = File(...)):
+
+    print(f"Uploading file: {file.filename}")
+
+    content = await file.read()
+    contract = content.decode("utf-8")
+
+    return analyze_and_store(contract, file.filename)
+
+# ==========================================
+# ANALYZE CONTRACT (JSON body — for Power Automate / SharePoint)
+# ==========================================
+
+class ContractPayload(BaseModel):
+    filename: str = "contract.txt"
+    content: str
+
+@app.post("/analyze-contract", dependencies=[Depends(require_api_key)])
+def analyze_contract(payload: ContractPayload):
+    """Analyze a contract sent as JSON text (no file upload needed).
+
+    Designed for Power Automate: POST { "filename": ..., "content": ... } with the
+    X-API-Key header, and receive the structured risk JSON to write back into the
+    SharePoint Contract Register."""
+
+    print(f"Analyzing contract from JSON: {payload.filename}")
+
+    return analyze_and_store(payload.content, payload.filename)
 
 # ==========================================
 # SEMANTIC SEARCH
