@@ -1,5 +1,7 @@
 # Enterprise AI Contract Intelligence Platform
 
+[![Deploy to Azure Container Apps](https://github.com/arnienemeth/enterprise-ai-contract-intelligence/actions/workflows/deploy.yml/badge.svg)](https://github.com/arnienemeth/enterprise-ai-contract-intelligence/actions/workflows/deploy.yml)
+
 **Author:** Arnold Nemeth
 **Version:** MVP v1.0
 **Status:** Working end-to-end MVP demonstrating an enterprise-grade AI architecture. The AI core (ingest → analyze → store → search → dashboard) runs locally against Azure OpenAI; the enterprise integration layer (SharePoint / Power Automate) is designed and documented.
