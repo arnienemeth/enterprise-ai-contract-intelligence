@@ -1,4 +1,4 @@
-from fastapi import FastAPI, UploadFile, File
+from fastapi import FastAPI, UploadFile, File, Depends, Header, HTTPException
 from fastapi.responses import HTMLResponse
 from pydantic import BaseModel
 from openai import AzureOpenAI
@@ -50,6 +50,31 @@ class Question(BaseModel):
     question: str
 
 # ==========================================
+# API KEY AUTH (protects the Azure-billed endpoints)
+# ==========================================
+#
+# The dashboard and read-only endpoints stay public (they cost nothing). The
+# endpoints that call Azure OpenAI require a secret key sent in the "X-API-Key"
+# header, so the public can't run up your token bill.
+#
+# Behavior: if the API_KEY environment variable is set, the key is enforced.
+# If it is NOT set (e.g. local development), the check is skipped so the app
+# still runs without extra config.
+
+def require_api_key(x_api_key: str = Header(default=None)):
+    expected = os.getenv("API_KEY")
+
+    # No key configured -> open (dev convenience).
+    if not expected:
+        return
+
+    if x_api_key != expected:
+        raise HTTPException(
+            status_code=401,
+            detail="Missing or invalid API key. Send it in the 'X-API-Key' header.",
+        )
+
+# ==========================================
 # ROOT
 # ==========================================
 
@@ -64,7 +89,7 @@ def root():
 # ASK AI
 # ==========================================
 
-@app.post("/ask")
+@app.post("/ask", dependencies=[Depends(require_api_key)])
 def ask_ai(data: Question):
 
     print(f"Question received: {data.question}")
@@ -194,7 +219,7 @@ You are an enterprise AI assistant specializing in:
 # UPLOAD CONTRACT
 # ==========================================
 
-@app.post("/upload-contract")
+@app.post("/upload-contract", dependencies=[Depends(require_api_key)])
 async def upload_contract(file: UploadFile = File(...)):
 
     print(f"Uploading file: {file.filename}")
@@ -313,7 +338,7 @@ No explanations.
 # SEMANTIC SEARCH
 # ==========================================
 
-@app.post("/semantic-search")
+@app.post("/semantic-search", dependencies=[Depends(require_api_key)])
 def semantic_search(data: Question):
 
     results = search_similar(data.question)
@@ -326,7 +351,7 @@ def semantic_search(data: Question):
 # FIND RISKY CONTRACTS
 # ==========================================
 
-@app.post("/find-risky-contracts")
+@app.post("/find-risky-contracts", dependencies=[Depends(require_api_key)])
 def find_risky_contracts(data: Question):
 
     results = search_similar(data.question)
