@@ -1,193 +1,114 @@
-import chromadb
-import uuid
+"""Vector-store dispatcher.
+
+Exposes a single interface — add_document, search_similar, get_collection_stats,
+get_all_metadata, reset_collection — backed by either:
+
+  * Azure AI Search   (production)  — used when AZURE_SEARCH_ENDPOINT is set
+  * ChromaDB          (local dev)   — the default
+
+The rest of the app imports from this module and doesn't care which backend is
+active, so switching is a config change, not a code change.
+"""
+
 import os
 
-from openai import AzureOpenAI
 from dotenv import load_dotenv
 
 load_dotenv()
 
-client = AzureOpenAI(
-    api_key=os.getenv("AZURE_OPENAI_API_KEY"),
-    api_version=os.getenv("AZURE_OPENAI_API_VERSION"),
-    azure_endpoint=os.getenv("AZURE_OPENAI_ENDPOINT")
-)
+# Shared embedding client (used by both backends).
+from vector_store.embeddings_client import create_embedding  # noqa: F401 (re-exported)
 
-# ==========================================
-# CHROMA DB
-# ==========================================
 
-chroma_client = chromadb.PersistentClient(
-    path="./vector_db"
-)
-
-COLLECTION_NAME = "enterprise_knowledge"
-
-collection = chroma_client.get_or_create_collection(
-    name=COLLECTION_NAME
-)
-
-# ==========================================
-# RESET COLLECTION (for a clean reindex)
-# ==========================================
-
-def reset_collection():
-    """Remove every document from the collection, keeping the collection itself.
-
-    Used by reindex.py to clear embeddings created by the old code (which stored
-    hardcoded vendor/risk metadata).
-
-    NOTE: we clear documents *in place* rather than deleting and recreating the
-    collection. Deleting the collection changes its id, which breaks any other
-    process (e.g. a running uvicorn server) that still holds a handle to the old
-    collection — it would raise "Collection [id] does not exist". Clearing in
-    place keeps the id stable so a running server keeps working.
-    """
-
-    global collection
-
-    try:
-        existing = collection.get()
-        ids = existing.get("ids", []) or []
-
-        if ids:
-            collection.delete(ids=ids)
-
-        print(f"Vector store cleared ({len(ids)} document(s) removed).")
-
-    except Exception as e:
-        print(f"reset_collection warning: {e}")
-
-    return True
-
-# ==========================================
-# CREATE EMBEDDING
-# ==========================================
-
-def create_embedding(text):
-
-    response = client.embeddings.create(
-        model=os.getenv("AZURE_OPENAI_EMBEDDING_DEPLOYMENT"),
-        input=[text]
+if os.getenv("AZURE_SEARCH_ENDPOINT"):
+    # ---- Production backend: Azure AI Search ----
+    print("Vector store backend: Azure AI Search")
+    from vector_store.azure_search_engine import (  # noqa: F401
+        add_document,
+        search_similar,
+        get_collection_stats,
+        get_all_metadata,
+        reset_collection,
     )
 
-    return response.data[0].embedding
+else:
+    # ---- Local backend: ChromaDB ----
+    print("Vector store backend: ChromaDB (local)")
 
-# ==========================================
-# ADD DOCUMENT
-# ==========================================
+    import uuid
+    import chromadb
 
-def add_document(
-    text,
-    filename="unknown.txt",
-    vendor="Unknown",
-    risk_level="Unknown"
-):
+    chroma_client = chromadb.PersistentClient(path="./vector_db")
+    COLLECTION_NAME = "enterprise_knowledge"
+    collection = chroma_client.get_or_create_collection(name=COLLECTION_NAME)
 
-    embedding = create_embedding(text)
+    def reset_collection():
+        """Remove every document from the collection, keeping the collection itself.
 
-    doc_id = str(uuid.uuid4())
+        Clears documents *in place* rather than deleting/recreating the collection,
+        so a running server keeps working (deleting would change the collection id).
+        """
+        global collection
+        try:
+            existing = collection.get()
+            ids = existing.get("ids", []) or []
+            if ids:
+                collection.delete(ids=ids)
+            print(f"Vector store cleared ({len(ids)} document(s) removed).")
+        except Exception as e:
+            print(f"reset_collection warning: {e}")
+        return True
 
-    collection.add(
-        documents=[text],
-        embeddings=[embedding],
-        ids=[doc_id],
-        metadatas=[
-            {
-                "filename": filename,
-                "vendor": vendor,
-                "risk_level": risk_level
-            }
-        ]
-    )
+    def add_document(text, filename="unknown.txt", vendor="Unknown", risk_level="Unknown"):
+        embedding = create_embedding(text)
+        doc_id = str(uuid.uuid4())
+        collection.add(
+            documents=[text],
+            embeddings=[embedding],
+            ids=[doc_id],
+            metadatas=[{"filename": filename, "vendor": vendor, "risk_level": risk_level}],
+        )
+        print(f"Document stored: {filename}")
+        return {"document_id": doc_id, "filename": filename, "status": "stored"}
 
-    print(f"Document stored: {filename}")
+    def search_similar(query, top_k=3):
+        query_embedding = create_embedding(query)
+        results = collection.query(query_embeddings=[query_embedding], n_results=top_k)
 
-    return {
-        "document_id": doc_id,
-        "filename": filename,
-        "status": "stored"
-    }
+        formatted_results = []
+        documents = results["documents"][0]
+        metadatas = results["metadatas"][0]
+        distances = results["distances"][0]
 
-# ==========================================
-# SEARCH SIMILAR
-# ==========================================
+        for i in range(len(documents)):
+            formatted_results.append({
+                "text": documents[i],
+                "filename": metadatas[i]["filename"],
+                "vendor": metadatas[i]["vendor"],
+                "risk_level": metadatas[i]["risk_level"],
+                "score": round(1 - distances[i], 3),
+            })
+        return formatted_results
 
-def search_similar(query, top_k=3):
+    def get_collection_stats():
+        """Aggregate real counts from the collection. Returns (total, counts, vendors)."""
+        data = collection.get(include=["metadatas"])
+        metadatas = data.get("metadatas") or []
 
-    query_embedding = create_embedding(query)
+        total = len(metadatas)
+        counts = {"high": 0, "medium": 0, "low": 0, "unknown": 0}
+        vendors = {}
 
-    results = collection.query(
-        query_embeddings=[query_embedding],
-        n_results=top_k
-    )
+        for meta in metadatas:
+            meta = meta or {}
+            level = str(meta.get("risk_level", "")).strip().lower()
+            counts[level if level in counts else "unknown"] += 1
+            vendor = str(meta.get("vendor", "Unknown")).strip() or "Unknown"
+            vendors[vendor] = vendors.get(vendor, 0) + 1
 
-    formatted_results = []
+        return total, counts, vendors
 
-    documents = results["documents"][0]
-    metadatas = results["metadatas"][0]
-    distances = results["distances"][0]
-
-    for i in range(len(documents)):
-
-        formatted_results.append({
-            "text": documents[i],
-            "filename": metadatas[i]["filename"],
-            "vendor": metadatas[i]["vendor"],
-            "risk_level": metadatas[i]["risk_level"],
-            "score": round(1 - distances[i], 3)
-        })
-
-    return formatted_results
-
-# ==========================================
-# COLLECTION STATS (for /dashboard)
-# ==========================================
-
-def get_collection_stats():
-    """Aggregate real counts from the ChromaDB collection.
-
-    Returns (total, counts_by_level, counts_by_vendor).
-    """
-
-    data = collection.get(include=["metadatas"])
-
-    metadatas = data.get("metadatas") or []
-
-    total = len(metadatas)
-
-    counts = {"high": 0, "medium": 0, "low": 0, "unknown": 0}
-    vendors = {}
-
-    for meta in metadatas:
-
-        meta = meta or {}
-
-        level = str(meta.get("risk_level", "")).strip().lower()
-
-        if level in counts:
-            counts[level] += 1
-        else:
-            counts["unknown"] += 1
-
-        vendor = str(meta.get("vendor", "Unknown")).strip() or "Unknown"
-        vendors[vendor] = vendors.get(vendor, 0) + 1
-
-    return total, counts, vendors
-
-
-# ==========================================
-# RAW METADATA (for analytics)
-# ==========================================
-
-def get_all_metadata():
-    """Return the metadata record for every document in the collection.
-
-    Each item looks like {"filename": ..., "vendor": ..., "risk_level": ...}.
-    Analytics endpoints build on this instead of re-querying Chroma themselves.
-    """
-
-    data = collection.get(include=["metadatas"])
-
-    return data.get("metadatas") or []
-
+    def get_all_metadata():
+        """Return the metadata record for every document in the collection."""
+        data = collection.get(include=["metadatas"])
+        return data.get("metadatas") or []
