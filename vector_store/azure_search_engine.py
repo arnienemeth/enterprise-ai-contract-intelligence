@@ -1,8 +1,16 @@
-"""Azure AI Search vector-store backend.
+"""Azure AI Search vector-store backend (chunk-aware).
 
 Implements the same interface as the ChromaDB backend (add_document,
 search_similar, get_collection_stats, get_all_metadata, reset_collection) so the
 rest of the app is unchanged. Activated when AZURE_SEARCH_ENDPOINT is set.
+
+Chunking model
+--------------
+A contract is split into overlapping chunks (see ingestion/chunker.py). Each
+chunk is one row in the index, sharing the parent's ``doc_id`` and carrying its
+own ``chunk_index``. Semantic search therefore retrieves the most relevant
+*section*, while document-level stats (dashboard, vendor analytics) dedupe by
+``doc_id`` so a 12-chunk contract still counts as one contract.
 
 Config (environment variables):
     AZURE_SEARCH_ENDPOINT   https://<service>.search.windows.net
@@ -28,6 +36,7 @@ from azure.search.documents.indexes.models import (
 from azure.search.documents.models import VectorizedQuery
 
 from vector_store.embeddings_client import create_embedding
+from ingestion.chunker import chunk_text
 
 ENDPOINT = os.getenv("AZURE_SEARCH_ENDPOINT")
 KEY = os.getenv("AZURE_SEARCH_KEY")
@@ -39,69 +48,106 @@ _search_client = SearchClient(endpoint=ENDPOINT, index_name=INDEX_NAME, credenti
 
 _index_ready = False
 
+# Fields the chunk-aware schema must have. If an existing index predates
+# chunking (no "doc_id"), it is recreated so the schema is correct.
+_REQUIRED_FIELDS = {"id", "content", "filename", "vendor", "risk_level", "doc_id", "chunk_index", "embedding"}
+
+
+def _build_index() -> SearchIndex:
+    # Size the vector field to match the embedding model's output (autodetected).
+    dim = len(create_embedding("dimension probe"))
+
+    fields = [
+        SimpleField(name="id", type=SearchFieldDataType.String, key=True),
+        SearchField(name="content", type=SearchFieldDataType.String, searchable=True),
+        SimpleField(name="filename", type=SearchFieldDataType.String, filterable=True, facetable=True),
+        SimpleField(name="vendor", type=SearchFieldDataType.String, filterable=True, facetable=True),
+        SimpleField(name="risk_level", type=SearchFieldDataType.String, filterable=True, facetable=True),
+        # Chunking metadata.
+        SimpleField(name="doc_id", type=SearchFieldDataType.String, filterable=True, facetable=True),
+        SimpleField(name="chunk_index", type=SearchFieldDataType.Int32, filterable=True, sortable=True),
+        SearchField(
+            name="embedding",
+            type=SearchFieldDataType.Collection(SearchFieldDataType.Single),
+            searchable=True,
+            vector_search_dimensions=dim,
+            vector_search_profile_name="vprofile",
+        ),
+    ]
+
+    vector_search = VectorSearch(
+        algorithms=[HnswAlgorithmConfiguration(name="hnsw")],
+        profiles=[VectorSearchProfile(name="vprofile", algorithm_configuration_name="hnsw")],
+    )
+
+    return SearchIndex(name=INDEX_NAME, fields=fields, vector_search=vector_search)
+
 
 def _ensure_index():
-    """Create the search index (with a vector field) if it doesn't exist yet.
+    """Create (or upgrade) the search index. Runs lazily on first use.
 
-    Runs lazily on first use so importing this module never makes a network call.
+    If an older index without the chunking fields exists, it is deleted and
+    recreated with the correct schema (data must be re-ingested via reindex.py).
     """
     global _index_ready
     if _index_ready:
         return
 
-    existing = [i.name for i in _index_client.list_indexes()]
-    if INDEX_NAME not in existing:
-        # Size the vector field to match the embedding model's output.
-        dim = len(create_embedding("dimension probe"))
+    existing = {i.name: i for i in _index_client.list_indexes()}
 
-        fields = [
-            SimpleField(name="id", type=SearchFieldDataType.String, key=True),
-            SearchField(name="content", type=SearchFieldDataType.String, searchable=True),
-            SimpleField(name="filename", type=SearchFieldDataType.String, filterable=True, facetable=True),
-            SimpleField(name="vendor", type=SearchFieldDataType.String, filterable=True, facetable=True),
-            SimpleField(name="risk_level", type=SearchFieldDataType.String, filterable=True, facetable=True),
-            SearchField(
-                name="embedding",
-                type=SearchFieldDataType.Collection(SearchFieldDataType.Single),
-                searchable=True,
-                vector_search_dimensions=dim,
-                vector_search_profile_name="vprofile",
-            ),
-        ]
-
-        vector_search = VectorSearch(
-            algorithms=[HnswAlgorithmConfiguration(name="hnsw")],
-            profiles=[VectorSearchProfile(name="vprofile", algorithm_configuration_name="hnsw")],
-        )
-
-        _index_client.create_index(
-            SearchIndex(name=INDEX_NAME, fields=fields, vector_search=vector_search)
-        )
-        print(f"Created Azure AI Search index '{INDEX_NAME}' (dim={dim}).")
+    if INDEX_NAME in existing:
+        field_names = {f.name for f in existing[INDEX_NAME].fields}
+        if not _REQUIRED_FIELDS.issubset(field_names):
+            print(
+                f"Index '{INDEX_NAME}' is missing chunking fields "
+                f"{_REQUIRED_FIELDS - field_names}; recreating."
+            )
+            _index_client.delete_index(INDEX_NAME)
+            _index_client.create_index(_build_index())
+            print(f"Recreated Azure AI Search index '{INDEX_NAME}' (chunk-aware).")
+    else:
+        _index_client.create_index(_build_index())
+        print(f"Created Azure AI Search index '{INDEX_NAME}' (chunk-aware).")
 
     _index_ready = True
 
 
 def add_document(text, filename="unknown.txt", vendor="Unknown", risk_level="Unknown"):
+    """Chunk the document and store one vector row per chunk.
+
+    All chunks share a generated ``doc_id`` so downstream aggregation counts the
+    document once. Returns the doc_id and chunk count.
+    """
     _ensure_index()
 
-    embedding = create_embedding(text)
+    chunks = chunk_text(text) or [text]
     doc_id = str(uuid.uuid4())
 
-    _search_client.upload_documents(documents=[{
-        "id": doc_id,
-        "content": text,
+    documents = []
+    for idx, chunk in enumerate(chunks):
+        documents.append({
+            "id": f"{doc_id}-{idx}",
+            "content": chunk,
+            "filename": filename,
+            "vendor": vendor,
+            "risk_level": risk_level,
+            "doc_id": doc_id,
+            "chunk_index": idx,
+            "embedding": create_embedding(chunk),
+        })
+
+    _search_client.upload_documents(documents=documents)
+
+    print(f"Stored in Azure AI Search: {filename} ({len(chunks)} chunk(s))")
+    return {
+        "document_id": doc_id,
         "filename": filename,
-        "vendor": vendor,
-        "risk_level": risk_level,
-        "embedding": embedding,
-    }])
-
-    print(f"Document stored in Azure AI Search: {filename}")
-    return {"document_id": doc_id, "filename": filename, "status": "stored"}
+        "chunks": len(chunks),
+        "status": "stored",
+    }
 
 
-def search_similar(query, top_k=3):
+def search_similar(query, top_k=5):
     _ensure_index()
 
     query_embedding = create_embedding(query)
@@ -112,7 +158,7 @@ def search_similar(query, top_k=3):
     results = _search_client.search(
         search_text=None,
         vector_queries=[vector_query],
-        select=["content", "filename", "vendor", "risk_level"],
+        select=["content", "filename", "vendor", "risk_level", "doc_id", "chunk_index"],
         top=top_k,
     )
 
@@ -123,27 +169,40 @@ def search_similar(query, top_k=3):
             "filename": r.get("filename", "unknown"),
             "vendor": r.get("vendor", "Unknown"),
             "risk_level": r.get("risk_level", "Unknown"),
+            "doc_id": r.get("doc_id"),
+            "chunk_index": r.get("chunk_index"),
             "score": round(float(r.get("@search.score", 0.0)), 3),
         })
     return formatted
 
 
-def get_all_metadata():
-    _ensure_index()
-
+def _iter_all_chunk_metadata():
+    """Yield metadata for every chunk row (used to derive document-level stats)."""
     results = _search_client.search(
         search_text="*",
-        select=["filename", "vendor", "risk_level"],
+        select=["doc_id", "filename", "vendor", "risk_level"],
         top=1000,
     )
-    return [
-        {
-            "filename": r.get("filename"),
-            "vendor": r.get("vendor"),
-            "risk_level": r.get("risk_level"),
-        }
-        for r in results
-    ]
+    for r in results:
+        yield r
+
+
+def get_all_metadata():
+    """Return one metadata record per *document* (deduped by doc_id).
+
+    Legacy rows without a doc_id fall back to filename as the identity key, so a
+    mixed index still counts documents sanely.
+    """
+    seen = {}
+    for r in _iter_all_chunk_metadata():
+        key = r.get("doc_id") or r.get("filename") or str(uuid.uuid4())
+        if key not in seen:
+            seen[key] = {
+                "filename": r.get("filename"),
+                "vendor": r.get("vendor"),
+                "risk_level": r.get("risk_level"),
+            }
+    return list(seen.values())
 
 
 def get_collection_stats():
@@ -164,12 +223,12 @@ def get_collection_stats():
 
 
 def reset_collection():
-    """Remove every document from the index (keeps the index itself)."""
+    """Remove every chunk from the index (keeps the index itself)."""
     _ensure_index()
 
     ids = [r["id"] for r in _search_client.search(search_text="*", select=["id"], top=1000)]
     if ids:
         _search_client.delete_documents(documents=[{"id": i} for i in ids])
-        print(f"Azure AI Search index cleared ({len(ids)} document(s) removed).")
+        print(f"Azure AI Search index cleared ({len(ids)} chunk(s) removed).")
 
     return True

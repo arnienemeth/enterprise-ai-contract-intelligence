@@ -23,6 +23,7 @@ from dotenv import load_dotenv
 from openai import AzureOpenAI
 
 from vector_store.embedding_engine import add_document, reset_collection
+from ingestion import extract_text, ExtractionError, SUPPORTED_EXTENSIONS
 
 load_dotenv()
 
@@ -38,6 +39,10 @@ DOCUMENTS_DIR = "documents"
 def analyze_contract(text: str) -> dict:
     """Ask the AI to extract the vendor and risk level from a contract."""
 
+    # Cap the text sent to the analysis prompt; the full text is still chunked
+    # and stored for retrieval elsewhere.
+    analysis_text = text[:60000]
+
     prompt = f"""
 Analyze this enterprise contract.
 
@@ -47,7 +52,7 @@ Identify:
 - risk level (Low / Medium / High)
 
 Contract:
-{text}
+{analysis_text}
 
 Return ONLY valid JSON in this exact format:
 
@@ -91,9 +96,14 @@ def main():
     if do_reset:
         reset_collection()
 
-    # Prefer clean *.txt files; skip the legacy double-extension ".txt.txt" copies
-    all_txt = sorted(glob.glob(os.path.join(DOCUMENTS_DIR, "*.txt")))
-    files = [f for f in all_txt if not f.endswith(".txt.txt")]
+    # Ingest every supported format (PDF / DOCX / TXT / MD). Skip the legacy
+    # double-extension ".txt.txt" copies.
+    all_files = sorted(glob.glob(os.path.join(DOCUMENTS_DIR, "*")))
+    files = [
+        f for f in all_files
+        if os.path.splitext(f)[1].lower() in SUPPORTED_EXTENSIONS
+        and not f.endswith(".txt.txt")
+    ]
 
     if not files:
         print(f"No documents found in {DOCUMENTS_DIR}/")
@@ -102,8 +112,12 @@ def main():
     print(f"Reindexing {len(files)} document(s) from {DOCUMENTS_DIR}/ ...\n")
 
     for path in files:
-        with open(path, "r", encoding="utf-8") as f:
-            text = f.read().strip()
+        try:
+            with open(path, "rb") as f:
+                text = extract_text(f.read(), os.path.basename(path)).strip()
+        except ExtractionError as e:
+            print(f"  skip ({e}): {os.path.basename(path)}")
+            continue
 
         if not text:
             print(f"  skip (empty): {path}")

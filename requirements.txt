@@ -16,6 +16,12 @@ openai==2.46.0                  # AzureOpenAI client
 chromadb==1.5.9                 # local dev vector DB (./vector_db)
 azure-search-documents==11.5.2  # production vector store (used when AZURE_SEARCH_ENDPOINT is set)
 
+# --- Document ingestion / OCR (real PDF/DOCX/scans) ---
+pdfplumber==0.11.9              # digital PDF text extraction (primary)
+pypdf==6.13.1                   # PDF fallback extractor
+python-docx==1.2.0              # DOCX text + tables
+azure-ai-documentintelligence==1.0.2  # OCR for scans/images (used when AZURE_DOCINTEL_ENDPOINT is set)
+
 # --- Config ---
 python-dotenv==1.2.2            # loads .env
 

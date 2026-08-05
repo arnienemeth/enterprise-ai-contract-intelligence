@@ -10,9 +10,16 @@ from vector_store.embedding_engine import (
     get_collection_stats,
     get_all_metadata
 )
+from ingestion import extract_text, ExtractionError
 
 import os
 import json
+
+# Contracts can be huge. gpt-4o-mini has a large context window, but we cap the
+# text sent to the risk-analysis prompt to stay well within limits and control
+# cost. The FULL text is still chunked and stored for retrieval — only the
+# single analysis call sees a bounded amount.
+MAX_ANALYSIS_CHARS = 60000
 
 # ==========================================
 # LOAD ENVIRONMENT
@@ -226,6 +233,11 @@ def analyze_and_store(contract: str, filename: str) -> dict:
     Shared by /upload-contract (multipart file) and /analyze-contract (JSON body,
     used by Power Automate)."""
 
+    # Bound the text seen by the analysis prompt (full text is still stored).
+    analysis_text = contract[:MAX_ANALYSIS_CHARS]
+    if len(contract) > MAX_ANALYSIS_CHARS:
+        analysis_text += "\n\n[... contract truncated for analysis ...]"
+
     prompt = f"""
 Analyze this enterprise contract.
 
@@ -241,7 +253,7 @@ Identify:
 - suspicious clauses
 
 Contract:
-{contract}
+{analysis_text}
 
 Return ONLY valid JSON in this exact format:
 
@@ -309,7 +321,13 @@ async def upload_contract(file: UploadFile = File(...)):
     print(f"Uploading file: {file.filename}")
 
     content = await file.read()
-    contract = content.decode("utf-8")
+
+    # Extract text from the real file format (PDF / DOCX / scan / TXT) via the
+    # ingestion layer (Azure Document Intelligence when configured, else local).
+    try:
+        contract = extract_text(content, file.filename)
+    except ExtractionError as e:
+        raise HTTPException(status_code=422, detail=str(e))
 
     return analyze_and_store(contract, file.filename)
 

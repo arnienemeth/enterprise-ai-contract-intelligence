@@ -38,6 +38,8 @@ else:
     import uuid
     import chromadb
 
+    from ingestion.chunker import chunk_text
+
     chroma_client = chromadb.PersistentClient(path="./vector_db")
     COLLECTION_NAME = "enterprise_knowledge"
     collection = chroma_client.get_or_create_collection(name=COLLECTION_NAME)
@@ -60,18 +62,41 @@ else:
         return True
 
     def add_document(text, filename="unknown.txt", vendor="Unknown", risk_level="Unknown"):
-        embedding = create_embedding(text)
-        doc_id = str(uuid.uuid4())
-        collection.add(
-            documents=[text],
-            embeddings=[embedding],
-            ids=[doc_id],
-            metadatas=[{"filename": filename, "vendor": vendor, "risk_level": risk_level}],
-        )
-        print(f"Document stored: {filename}")
-        return {"document_id": doc_id, "filename": filename, "status": "stored"}
+        """Chunk the document and store one embedding per chunk.
 
-    def search_similar(query, top_k=3):
+        All chunks share a generated doc_id so document-level stats count the
+        contract once even though it lives as several vectors."""
+        chunks = chunk_text(text) or [text]
+        doc_id = str(uuid.uuid4())
+
+        ids, embeddings, documents, metadatas = [], [], [], []
+        for idx, chunk in enumerate(chunks):
+            ids.append(f"{doc_id}-{idx}")
+            embeddings.append(create_embedding(chunk))
+            documents.append(chunk)
+            metadatas.append({
+                "filename": filename,
+                "vendor": vendor,
+                "risk_level": risk_level,
+                "doc_id": doc_id,
+                "chunk_index": idx,
+            })
+
+        collection.add(
+            documents=documents,
+            embeddings=embeddings,
+            ids=ids,
+            metadatas=metadatas,
+        )
+        print(f"Document stored: {filename} ({len(chunks)} chunk(s))")
+        return {
+            "document_id": doc_id,
+            "filename": filename,
+            "chunks": len(chunks),
+            "status": "stored",
+        }
+
+    def search_similar(query, top_k=5):
         query_embedding = create_embedding(query)
         results = collection.query(query_embeddings=[query_embedding], n_results=top_k)
 
@@ -81,19 +106,38 @@ else:
         distances = results["distances"][0]
 
         for i in range(len(documents)):
+            meta = metadatas[i] or {}
             formatted_results.append({
                 "text": documents[i],
-                "filename": metadatas[i]["filename"],
-                "vendor": metadatas[i]["vendor"],
-                "risk_level": metadatas[i]["risk_level"],
+                "filename": meta.get("filename", "unknown"),
+                "vendor": meta.get("vendor", "Unknown"),
+                "risk_level": meta.get("risk_level", "Unknown"),
+                "doc_id": meta.get("doc_id"),
+                "chunk_index": meta.get("chunk_index"),
                 "score": round(1 - distances[i], 3),
             })
         return formatted_results
 
+    def _dedupe_by_document(metadatas):
+        """Collapse chunk-level metadata to one record per document (by doc_id)."""
+        seen = {}
+        for meta in metadatas:
+            meta = meta or {}
+            key = meta.get("doc_id") or meta.get("filename") or str(uuid.uuid4())
+            if key not in seen:
+                seen[key] = {
+                    "filename": meta.get("filename"),
+                    "vendor": meta.get("vendor"),
+                    "risk_level": meta.get("risk_level"),
+                }
+        return list(seen.values())
+
     def get_collection_stats():
-        """Aggregate real counts from the collection. Returns (total, counts, vendors)."""
+        """Aggregate real counts from the collection. Returns (total, counts, vendors).
+
+        Deduped by doc_id so chunks of the same contract count once."""
         data = collection.get(include=["metadatas"])
-        metadatas = data.get("metadatas") or []
+        metadatas = _dedupe_by_document(data.get("metadatas") or [])
 
         total = len(metadatas)
         counts = {"high": 0, "medium": 0, "low": 0, "unknown": 0}
@@ -109,6 +153,6 @@ else:
         return total, counts, vendors
 
     def get_all_metadata():
-        """Return the metadata record for every document in the collection."""
+        """Return one metadata record per document (deduped by doc_id)."""
         data = collection.get(include=["metadatas"])
-        return data.get("metadatas") or []
+        return _dedupe_by_document(data.get("metadatas") or [])
