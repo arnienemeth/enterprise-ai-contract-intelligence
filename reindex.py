@@ -44,12 +44,25 @@ def analyze_contract(text: str) -> dict:
     analysis_text = text[:60000]
 
     prompt = f"""
-Analyze this enterprise contract.
+Extract the vendor and assess the risk of this enterprise contract. Be
+conservative and evidence-based: base the risk level ONLY on terms explicitly
+present in the text. Do not speculate or assume missing clauses.
 
-Identify:
-- vendor / counterparty name (extract from the contract text)
-- overall risk score (0-100)
-- risk level (Low / Medium / High)
+Risk-level rubric — pick the level matching the WORST substantiated risk:
+- Low (score 0-33): standard, balanced terms; mutual obligations; a reasonable
+  or capped liability; no unusual financial, data, or compliance exposure.
+- Medium (score 34-66): terms that genuinely warrant review — long payment
+  windows, auto-renewal, moderate liability exposure, minor data-handling gaps.
+- High (score 67-100): serious, one-sided or open-ended exposure — unlimited/
+  uncapped liability, broad indemnities, personal data with no GDPR/DPA terms,
+  unilateral termination, fees non-refundable on the provider's own breach.
+
+A liability CAP or mutual/limited terms LOWER the risk; do not treat a
+reasonable cap as a risk in itself.
+
+Vendor: identify the counterparty organization named in the contract (the
+primary named company / party). For a mutual agreement, use the first named
+organization. Only use "Unknown" if the text names no organization at all.
 
 Contract:
 {analysis_text}
@@ -58,8 +71,8 @@ Return ONLY valid JSON in this exact format:
 
 {{
     "vendor": "vendor name or Unknown",
-    "risk_score": 75,
-    "risk_level": "High"
+    "risk_score": 20,
+    "risk_level": "Low"
 }}
 """
 
@@ -68,11 +81,15 @@ Return ONLY valid JSON in this exact format:
         messages=[
             {
                 "role": "system",
-                "content": "You are a senior enterprise contract risk analyst. Return ONLY valid JSON. No markdown.",
+                "content": (
+                    "You are a senior enterprise contract risk analyst. You are precise "
+                    "and evidence-based and follow the provided risk rubric exactly. "
+                    "Return ONLY valid JSON. No markdown."
+                ),
             },
             {"role": "user", "content": prompt},
         ],
-        temperature=0.2,
+        temperature=0.1,
     )
 
     raw = response.choices[0].message.content.strip()

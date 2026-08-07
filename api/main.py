@@ -239,18 +239,33 @@ def analyze_and_store(contract: str, filename: str) -> dict:
         analysis_text += "\n\n[... contract truncated for analysis ...]"
 
     prompt = f"""
-Analyze this enterprise contract.
+Analyze this enterprise contract for risk. Be conservative and evidence-based:
+only flag a risk if it is EXPLICITLY supported by the contract text. If a
+category has no real concern, set it to "None identified". Do NOT speculate,
+do NOT assume missing clauses, and do NOT invent regulatory or compliance
+issues that the text does not raise.
 
-Identify:
-- vendor / counterparty name (extract from the contract text)
-- overall risk score (0-100)
-- risk level (Low / Medium / High)
-- financial risks
-- compliance concerns
-- GDPR risks
-- liability risks
-- operational risks
-- suspicious clauses
+Risk-level rubric — pick the level matching the WORST substantiated risk:
+- Low (score 0-33): standard, balanced terms; mutual obligations; a reasonable
+  or capped liability; no unusual financial, data, or compliance exposure.
+- Medium (score 34-66): one or more terms that genuinely warrant review — e.g.
+  long payment windows, auto-renewal, moderate liability exposure, minor data-
+  handling gaps.
+- High (score 67-100): serious, one-sided or open-ended exposure — e.g.
+  unlimited/uncapped liability, broad indemnities, personal data processed with
+  no GDPR/DPA terms, unilateral termination, fees non-refundable on the
+  provider's own breach.
+
+Important: a liability CAP, or mutual / limited terms, LOWER the risk. Do not
+treat a reasonable cap as a risk in itself.
+
+Vendor: identify the counterparty organization named in the contract (the
+primary named company / party). For a mutual agreement with two equal parties,
+use the first named organization. Only use "Unknown" if the text names no
+organization at all.
+
+For every risk you report, ground it in the text (quote or paraphrase the
+specific clause). If a category is clean, write exactly "None identified".
 
 Contract:
 {analysis_text}
@@ -259,14 +274,19 @@ Return ONLY valid JSON in this exact format:
 
 {{
     "vendor": "vendor name or Unknown",
-    "risk_score": 75,
-    "risk_level": "High",
-    "financial_risk": "description",
-    "compliance_risk": "description",
-    "liability_risk": "description",
-    "operational_risk": "description",
+    "risk_score": 20,
+    "risk_level": "Low",
+    "financial_risk": "None identified, or <risk> (evidence: <clause>)",
+    "compliance_risk": "None identified, or <risk> (evidence: <clause>)",
+    "liability_risk": "None identified, or <risk> (evidence: <clause>)",
+    "operational_risk": "None identified, or <risk> (evidence: <clause>)",
+    "confidence": 0.0,
+    "confidence_rationale": "one short sentence on why confidence is high or low",
     "executive_summary": "short executive summary"
 }}
+
+Set "confidence" between 0.0 and 1.0: high when the contract text is clear and
+complete, low when it is short, ambiguous, truncated, or hard to interpret.
 """
 
     response = client.chat.completions.create(
@@ -274,11 +294,16 @@ Return ONLY valid JSON in this exact format:
         messages=[
             {
                 "role": "system",
-                "content": "You are a senior enterprise contract risk analyst. Return ONLY valid JSON. No markdown. No explanations.",
+                "content": (
+                    "You are a senior enterprise contract risk analyst. You are precise "
+                    "and evidence-based: you never invent risks or regulatory concerns "
+                    "that the contract text does not support, and you follow the provided "
+                    "risk rubric exactly. Return ONLY valid JSON. No markdown. No explanations."
+                ),
             },
             {"role": "user", "content": prompt},
         ],
-        temperature=0.2,
+        temperature=0.1,
     )
 
     ai_response = response.choices[0].message.content
